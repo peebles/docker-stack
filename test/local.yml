@@ -1,0 +1,204 @@
+stack:
+  name: local
+  environment:
+    NODE_ENV: local
+  docker-machine: local-bi
+  docker-machine-env: docker-machine env
+  commands:
+    roll: forever restartall
+    update: run.sh update
+  
+## MongoDB
+
+mongodb-data:
+  container-type: data
+  image: busybox
+  container_name: mongodb-data
+  volumes:
+    - /data.db
+  command: /bin/true
+
+mongodb:
+  container-type: service
+  image: tutum/mongodb
+  container_name: mongodb
+  restart: always
+  environment:
+    MONGODB_USER: admin
+    MONGODB_PASS: mongodb
+    MONGODB_DATABASE: sr
+  volumes_from:
+    - mongodb-data
+
+## Knex
+    
+mysql-data:
+  container-type: data
+  image: busybox
+  container_name: mysql-data
+  volumes:
+    - /var/lib/mysql
+  command: /bin/true
+
+mysql:
+  container-type: service
+  image: mysql:5.5
+  container_name: mysql
+  restart: always
+  environment:
+    MYSQL_ROOT_PASSWORD: mysql
+    MYSQL_USER: admin
+    MYSQL_PASSWORD: mysql
+    MYSQL_DATABASE: sr
+  volumes_from:
+    - mysql-data
+
+## Redis - sessions and workqueue
+
+redis:
+  container-type: service
+  image: tutum/redis
+  container_name: redis
+  restart: always
+  environment:
+    REDIS_PASS: "**None**"
+
+## File system service
+
+fs-data:
+  container-type: data
+  image: busybox
+  container_name: fs-data
+  volumes:
+    - /data/filesystem
+  command: /bin/true
+
+filesystem:
+  container-type: application
+  build: ..
+  dockerfile: local/Dockerfile.filesystem
+  container_name: filesystem
+  restart: always
+  volumes_from:
+    - fs-data
+  volumes:
+    - ..:/deploy/retailbi2
+  environment:
+    NODE_ENV: "local"
+    PFSS_PORT: 80
+    PFSS_BASEPATH: "/data/filesystem"
+  links:
+    - mysql
+    - mongodb
+    - redis
+    
+## Heatmaps
+## Internally the heatmap server listenses on port 8000.  In this
+## environment, the outside world will access it via 9090
+heatmaps:
+  container-type: application
+  build: ..
+  dockerfile: local/Dockerfile.heatmaps
+  container_name: heatmaps
+  restart: always
+  environment:
+    NODE_ENV: "local"
+  volumes:
+    - ..:/deploy/retailbi2
+  ports:
+    - "9090:8000"
+  links:
+    - filesystem
+    - mongodb
+    
+## Portal
+
+portal:
+  container-type: application
+  build: ..
+  dockerfile: local/Dockerfile.portal
+  container_name: portal
+  restart: always
+  environment:
+    NODE_ENV: "local"
+    PORT: "80"
+  ports:
+    - "80:80"
+  volumes:
+    - ..:/deploy/retailbi2
+  links:
+    - mysql
+    - redis
+    - mongodb
+    - filesystem
+        
+## Report generator
+
+repgen:
+  container-type: application
+  build: ..
+  dockerfile: local/Dockerfile.report-generator
+  container_name: repgen
+  restart: always
+  environment:
+    NODE_ENV: "local"
+  volumes:
+    - ..:/deploy/retailbi2
+  links:
+    - redis
+    - filesystem
+    - mysql
+    - portal
+
+## Report scheduler (cron based)
+repsched:
+  container-type: application
+  build: ..
+  dockerfile: local/Dockerfile.report-scheduler
+  container_name: repsched
+  restart: always
+  environment:
+    NODE_ENV: "local"
+  volumes:
+    - ..:/deploy/retailbi2
+  links:
+    - redis
+    - mysql
+
+## api-server
+
+apiserver:
+  container-type: application
+  build: ..
+  dockerfile: local/Dockerfile.api-server
+  container_name: apiserver
+  restart: always
+  environment:
+    NODE_ENV: "local"
+    PORT: 80
+  ports:
+    - "8088:80"
+  volumes:
+    - ..:/deploy/retailbi2
+  links:
+    - mongodb
+
+## data generator
+
+generator:
+  container-type: application
+  build: ..
+  dockerfile: local/Dockerfile.generator
+  container_name: generator
+  restart: always
+  environment:
+    NODE_ENV: "local"
+    PORT: 3000
+  ports:
+    - "9999:3000"
+  volumes:
+    - ..:/deploy/retailbi2
+  links:
+    - redis
+    - apiserver
+    - heatmaps

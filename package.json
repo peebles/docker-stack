@@ -1,0 +1,24 @@
+{
+  "name": "docker-stack",
+  "version": "1.0.0",
+  "description": "Docker stack manager",
+  "main": "docker-stack.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Andrew Peebles",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^2.0.1",
+    "js-yaml": "^3.6.1",
+    "lodash": "^4.15.0",
+    "shortid": "^2.2.6",
+    "winston": "^2.2.0"
+  },
+  "bin": {
+    "docker-stack": "docker-stack.js"
+  }
+}
