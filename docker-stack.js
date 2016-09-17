@@ -2,10 +2,9 @@
 
 var _ = require( 'lodash' );
 var async = require( 'async' );
-
-var commandline = require( './lib/commandline' );
+var app = {};
 process.argv.shift(); process.argv.shift();
-var app = commandline( process.argv );
+require( './lib/commandline' )( app )( process.argv );
 var yaml = require( './lib/yaml' )( app );
 var exec = require( './lib/exec' )( app );
 var cutils = require( './lib/container' )( app );
@@ -20,9 +19,6 @@ if ( ! app.command ) {
   printHelp();
   process.exit(0);
 }
-
-// Read the docker-stack.yml file
-yaml.readMainFile();
 
 // Now do the environment.  Let the command line over ride the stackConfig
 //
