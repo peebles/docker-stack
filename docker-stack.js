@@ -98,34 +98,10 @@ if ( app.container && app.container != 'ALL' ) {
       });
     });		
   }
-  else if ( cutils.isNpmScript( app.command ) ) {
-    var cmd = [ 'npm run', app.command, '--',
-		app.options.join( ' ' ),
-		app.container,
-		app.arguments.join( ' ' ) ].join( ' ' );
-    var c = ( container && container[ 'docker-machine' ] ) ? container[ 'docker-machine' ] : 'localhost';
-    machineenv( c, function( err ) {
-      if ( err ) exit( err );
-      app.log.debug( 'yere' );
-      exec.syscall( cmd, function( err ) {
-	if ( err ) exit( err );
-	exit();
-      });
-    });		
-  }
   else {
-    // assume its a shell command
-    var cmd = [ app.command, 
-		app.options.join( ' ' ),
-		app.container,
-		app.arguments.join( ' ' ) ].join( ' ' );
-    machineenv( container[ 'docker-machine' ], function( err ) {
-      if ( err ) exit( err );
-      exec.syscall( cmd, function( err ) {
-	if ( err ) exit( err );
-	exit();
-      });
-    });		
+    app.log.error( '"' + app.command +'" is not a known command' );
+    printHelp();
+    process.exit(1);
   }
   
 }
@@ -202,40 +178,9 @@ else {
     },
     function( cb ) {
       if ( done ) return cb();
-      if ( ! cutils.isNpmScript( app.command ) ) return cb();
-      // Its a npm script
-      async.eachSeries( app.applications, function( container, cb ) {
-	var cmd = [ 'npm run', app.command, '--',
-		    app.options.join( ' ' ),
-		    container.container_name || container.__name,
-		    app.arguments.join( ' ' ) ].join( ' ' );
-	machineenv( container[ 'docker-machine' ], function( err ) {
-	  if ( err ) return cb( err );
-	  exec.syscall( cmd, function( err ) {
-	    if ( err ) return cb( err );
-	    done = true;
-	    cb();
-	  });
-	});
-      }, cb );
+      printHelp();
+      cb( new Error( '"' + app.command +'" is not a known command' ) );
     },
-    function( cb ) {
-      if ( done ) return cb();
-      // it may be a shell script
-      async.eachSeries( app.applications, function( container, cb ) {
-	var cmd = [ app.command, 
-		    app.options.join( ' ' ),
-		    container.container_name || container.__name,
-		    app.arguments.join( ' ' ) ].join( ' ' );
-	machineenv( container[ 'docker-machine' ], function( err ) {
-	  if ( err ) return cb( err );
-	  exec.syscall( cmd, function( err ) {
-	    if ( err ) return cb( err );
-	    cb();
-	  });
-	});
-      }, cb );
-    }
   ], function( err ) {
     exit( err );
   });
