@@ -1,6 +1,6 @@
 {
   "name": "docker-stack",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Docker stack manager",
   "main": "docker-stack.js",
   "directories": {
