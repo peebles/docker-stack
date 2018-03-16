@@ -2,7 +2,7 @@ stack:
   name: local
   environment:
     NODE_ENV: local
-  docker-machine: local-bi
+  docker-machine: local
   docker-machine-env: docker-machine env
   commands:
     roll: forever restartall

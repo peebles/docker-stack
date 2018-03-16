@@ -1,0 +1,30 @@
+version: 2
+
+stack:
+  name: local
+  docker-machine-env: docker-machine env
+
+services:
+  service1:
+    container-type: service
+    docker-machine: local
+    volumes:
+      - volume1:/data
+
+  service2:
+    container-type: service
+    docker-machine: local2
+    volumes:
+      - volume2:/data
+
+  service3:
+    container-type: service
+    docker-machine: local
+    volumes:
+      - .:/deploy
+
+volumes:
+  volume1:
+    driver: convoy
+  volume2:
+    driver: convoy
